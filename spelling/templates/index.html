@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Spelling Test - Upload</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="card">
+      <h1>📘 Spelling Test — Upload Word List</h1>
+      <p>Upload a <code>.txt</code> file with one word per line. Optionally include a sentence and/or part-of-speech using pipe separators:</p>
+      <pre>word|sentence|part_of_speech</pre>
+      <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="wordfile" accept=".txt" required>
+        <button type="submit" class="btn-primary">Upload & Start Test</button>
+      </form>
+
+      <section class="examples">
+        <h3>Example `sample_words.txt`</h3>
+        <pre>
+apple|The apple fell from the tree.|noun
+replay|Please replay the song.|verb
+happy|She felt happy about the news.|adjective
+        </pre>
+      </section>
+    </main>
+  </body>
+</html>

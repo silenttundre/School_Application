@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Results{% endblock %}
+{% block content %}
+<h2 class="mb-4">Results</h2>
+
+<div class="alert alert-info">
+  <strong>Your Score:</strong> {{ score }}/{{ total }}
+</div>
+
+{% for f in feedback %}
+  <div class="mb-4 p-3 bg-white rounded shadow-sm">
+    <p><strong>Original:</strong> {{ f.pair }}</p>
+    <p><strong>Your Answer:</strong> {{ f.student }}</p>
+    <div class="alert alert-secondary" role="alert" style="white-space: pre-wrap;">
+      {{ f.feedback }}
+    </div>
+  </div>
+{% endfor %}
+
+<div class="mt-4">
+  <a href="{{ url_for('retry') }}" class="btn btn-primary">🔄 Try New Set</a>
+  <a href="{{ url_for('home') }}" class="btn btn-link">Back to Home</a>
+</div>
+{% endblock %}

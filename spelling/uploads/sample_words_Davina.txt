@@ -1,0 +1,15 @@
+conjunction|The conjunction “and” connects two ideas.|noun
+adjunct|The new lab was built as an adjunct to the science building.|noun
+juncture|At this critical juncture, we must make a decision.|noun
+injunction|The court issued an injunction to stop construction.|noun
+conjugate|In Spanish class, we learned how to conjugate verbs.|verb
+subjugate|The emperor sought to subjugate neighboring lands.|verb
+constraint|Time was the biggest constraint on finishing the project.|noun
+stringent|The school has stringent rules about cell phone use.|adjective
+astringent|The lemon had an astringent taste.|adjective
+stricture|The new law placed a stricture on advertising tobacco.|noun
+restriction|There is a restriction on bringing food into the lab.|noun
+strait|The ship sailed through the narrow strait.|noun
+inept|He was inept at cooking and burned the pasta.|adjective
+aptitude|She showed an aptitude for solving math problems.|noun
+subjunction|A subjunction introduces a dependent clause in grammar.|noun

@@ -1,0 +1,241 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Spelling Test</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="card">
+      <h1>📝 Spelling Test</h1>
+      <div id="app">
+        <div id="card">
+          <div class="progress-container">
+            <div id="progress-bar"></div>
+          </div>
+          <p id="progress"></p>
+
+          <h2 id="word-display">Listen and type the spelling</h2>
+
+          <div class="controls">
+            <button id="say-word" class="btn-secondary">🔊 Say word</button>
+            <button id="say-sentence" class="btn-secondary">🔊 Say sentence</button>
+          </div>
+
+          <label>Type the spelling:</label>
+          <input id="spelling-input" autocomplete="off">
+
+          <label>What part of speech is this word in the sentence?</label>
+          <input id="pos-input" placeholder="noun / verb / adjective...">
+
+          <div id="affix-area" style="display:none">
+            <label>Affix question</label>
+            <p id="affix-prompt"></p>
+            <input id="affix-input" placeholder="Explain the prefix/suffix meaning">
+          </div>
+
+          <div class="controls">
+            <button id="next-btn" class="btn-primary">Next</button>
+          </div>
+        </div>
+
+        <div id="done" style="display:none">
+          <h2>All done 🎉</h2>
+          <button id="submit-btn" class="btn-primary">Submit answers</button>
+        </div>
+      </div>
+
+      <div id="results" style="display:none">
+        <h2>Results</h2>
+        <div id="results-area"></div>
+        <button id="retry" class="btn-secondary">Try again</button>
+      </div>
+    </main>
+
+    <script>
+    const words = {{ words|safe }};
+    let idx = 0;
+    const total = words.length;
+
+    const order = [...Array(total).keys()];
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+
+    const responses = [];
+
+    let ttsVoice = null;
+    let voicesReady = false;
+
+    function loadVoicesOnce() {
+      return new Promise((resolve) => {
+        function populate() {
+          const v = speechSynthesis.getVoices();
+          if (v.length > 0) {
+            ttsVoice = v.find(x => x.lang && x.lang.startsWith('en')) || v[0];
+            voicesReady = true;
+            resolve();
+          } else {
+            setTimeout(populate, 200);
+          }
+        }
+        populate();
+      });
+    }
+
+    if ('speechSynthesis' in window) {
+      loadVoicesOnce();
+    }
+
+    function speak(text) {
+      if (!('speechSynthesis' in window)) return;
+      const ensure = voicesReady ? Promise.resolve() : loadVoicesOnce();
+      ensure.then(() => {
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text);
+          if (ttsVoice) u.voice = ttsVoice;
+          u.lang = (ttsVoice && ttsVoice.lang) ? ttsVoice.lang : 'en-US';
+          u.rate = 0.95;
+          window.speechSynthesis.speak(u);
+        } catch (err) {
+          console.error('speak error', err);
+        }
+      });
+    }
+
+    function updateProgress(i) {
+      document.getElementById('progress').innerText = `Word ${i+1} of ${total}`;
+      const percent = ((i+1)/total) * 100;
+      document.getElementById('progress-bar').style.width = percent + '%';
+    }
+
+    function showItem(i) {
+      const w = words[order[i]];
+      updateProgress(i);
+      document.getElementById('spelling-input').value = '';
+      document.getElementById('pos-input').value = '';
+      document.getElementById('affix-input').value = '';
+      if (w.prefix || w.suffix) {
+        document.getElementById('affix-area').style.display = 'block';
+        let p = 'This word has ' + (w.prefix ? ('prefix "'+w.prefix+'" ') : '') + (w.suffix ? ('suffix "'+w.suffix+'"') : '');
+        document.getElementById('affix-prompt').innerText = p + '. Do you know what it means?';
+      } else {
+        document.getElementById('affix-area').style.display = 'none';
+      }
+      if (!w.sentence) {
+        w.sentence = `Here is the word used in a sentence: The word "${w.word}" appears here.`;
+      }
+    }
+
+    document.getElementById('say-word').addEventListener('click', ()=>{
+        const w = words[order[idx]];
+        // First: say the word
+        speak(w.word);
+
+        // After 5 seconds, say the sentence
+        setTimeout(() => {
+            speak(w.sentence);
+        }, 5000);
+
+        // After another 5 seconds, say the word again
+        setTimeout(() => {
+            speak(w.word);
+        }, 10000);
+    });
+
+    document.getElementById('say-sentence').addEventListener('click', ()=>{
+      const w = words[order[idx]];
+      speak(w.sentence);
+    });
+
+    document.getElementById('next-btn').addEventListener('click', ()=>{
+      const cur = words[order[idx]];
+      responses.push({
+        word: cur.word,
+        sentence: cur.sentence,
+        pos_expected: cur.pos,
+        prefix: cur.prefix || null,
+        suffix: cur.suffix || null,
+        explanation: cur.explanation || null,
+        spelling: document.getElementById('spelling-input').value,
+        pos: document.getElementById('pos-input').value,
+        affix_answer: document.getElementById('affix-input').value
+      });
+      idx++;
+      if (idx >= total) {
+        document.getElementById('card').style.display = 'none';
+        document.getElementById('done').style.display = 'block';
+      } else {
+        showItem(idx);
+      }
+    });
+
+    document.getElementById('submit-btn').addEventListener('click', async ()=>{
+      const resp = await fetch('/grade', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({responses})
+      });
+      const data = await resp.json();
+      displayResults(data);
+    });
+
+    function displayResults(data) {
+        document.getElementById('done').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        const area = document.getElementById('results-area');
+        area.innerHTML = '';
+
+        // Summary
+        const summary = document.createElement('p');
+        summary.className = 'summary';
+        summary.innerText = `Fully correct items: ${data.summary.fully_correct} / ${data.summary.total_items}`;
+        area.appendChild(summary);
+
+        data.results.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'result-item';
+
+            // Spelling feedback
+            const spellingFeedback = r.spelling_ok 
+            ? '✅ Correct' 
+            : `❌ Incorrect (Correct: ${r.correct_spelling})`;
+
+            // POS feedback
+            let posFeedback = '(not auto-graded)';
+            if (r.pos_ok === true) posFeedback = '✅ Correct';
+            else if (r.pos_ok === false) posFeedback = `❌ Incorrect (Expected: ${r.pos_expected})`;
+
+            // Affix feedback
+            let affixFeedback = '';
+            if (r.affix_ok === true) {
+                affixFeedback = `✅ Correct (matched prefix/suffix or meaning: ${r.affix_explanation || ''})`;
+            } else if (r.affix_ok === false) {
+                affixFeedback = `❌ Incorrect (Hint: ${r.affix_explanation || ''})`;
+            }
+
+            div.innerHTML = `
+            <h3>${r.word}</h3>
+            <p>Sentence: ${r.sentence || ''}</p>
+            <p>Your spelling: <strong>${r.student_spelling}</strong> ${spellingFeedback}</p>
+            <p>Your POS: ${r.pos_student || '(none)'} ${posFeedback}</p>
+            <p>Affix answer: ${r.affix_answer || '(none)'} ${affixFeedback}</p>
+            <p>Points: ${r.points} / ${r.max_points}</p>
+            `;
+
+            if (!r.spelling_ok || (r.pos_ok === false) || (r.affix_ok === false)) {
+                div.classList.add('wrong');
+            }
+
+            area.appendChild(div);
+        });
+
+        document.getElementById('retry').addEventListener('click', () => location.reload());
+    }
+
+    showItem(0);
+    </script>
+  </body>
+</html>

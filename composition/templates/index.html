@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="text-center mt-5">
+  <h1 class="mb-3">Sentence Combining Practice</h1>
+  <p class="lead">Combine two sentences into one clear and precise sentence.</p>
+  <a href="{{ url_for('quiz') }}" class="btn btn-lg btn-primary">Start Quiz</a>
+</div>
+{% endblock %}

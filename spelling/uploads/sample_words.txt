@@ -1,0 +1,8 @@
+deserve|You deserve a reward for your hard work.|verb
+server|The server brought our food quickly.|noun
+service|The company provides excellent customer service.|noun
+serviceable|The old bike was still serviceable after some repairs.|adjective
+variable|The weather is a variable we must consider.|noun
+variation|There is a slight variation in the fabric’s color.|noun
+variety|The garden has a wide variety of flowers.|noun
+various|We tried various methods to solve the problem.|adjective

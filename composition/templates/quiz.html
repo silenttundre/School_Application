@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Quiz{% endblock %}
+{% block content %}
+<h2 class="mb-4">Sentence Combining Quiz</h2>
+<form method="post" action="{{ url_for('submit') }}" onsubmit="showSpinner()">
+  {% for p in pairs %}
+    <div class="mb-4 p-3 bg-white rounded shadow-sm">
+      <p class="fw-bold">{{ p }}</p>
+      <input type="hidden" name="pair" value="{{ p }}">
+      <input type="text" name="answer" class="form-control" placeholder="Write your combined sentence here">
+    </div>
+  {% endfor %}
+
+  <div class="d-grid">
+    <button id="submitBtn" type="submit" class="btn btn-success btn-lg">
+      Submit Answers
+    </button>
+  </div>
+
+  <!-- Spinner -->
+  <div id="loadingSpinner" class="text-center mt-3" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Grading your answers...</p>
+  </div>
+</form>
+
+<div class="mt-3">
+  <a href="{{ url_for('retry') }}" class="btn btn-secondary">🔄 New Set</a>
+</div>
+{% endblock %}
