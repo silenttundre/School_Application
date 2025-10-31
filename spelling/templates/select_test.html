@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Select Test Type</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="card">
+      <h1>📘 Select Test Type</h1>
+      <p>Choose which type of test you'd like to take with your word list:</p>
+      
+      <div class="test-options">
+        <a href="{{ url_for('test', session=session) }}" class="btn-primary" style="display:block; margin-bottom: 12px; text-align: center; text-decoration: none;">
+          Spelling Test
+        </a>
+        <a href="{{ url_for('definition_test', session=session) }}" class="btn-secondary" style="display:block; text-align: center; text-decoration: none;">
+          Definition Test (Multiple Choice)
+        </a>
+      </div>
+      
+      <p style="margin-top: 20px;">
+        <strong>Spelling Test:</strong> Listen to words and type their spelling<br>
+        <strong>Definition Test:</strong> Read definitions and select the correct word from multiple choices
+      </p>
+    </main>
+  </body>
+</html>

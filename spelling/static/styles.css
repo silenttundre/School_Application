@@ -67,3 +67,20 @@ input{
 .result-item.wrong{background:#fff6f6}
 .summary{font-weight:bold;margin-top:12px}
 pre{background:#f0f0f0;padding:10px;border-radius:6px}
+
+.test-options {
+  margin: 20px 0;
+}
+
+.choice-btn {
+  transition: all 0.2s ease;
+}
+
+.choice-btn.selected {
+  background: #2563eb !important;
+  color: white !important;
+}
+
+.choice-btn:hover:not(.selected) {
+  background: #d1d5db;
+}

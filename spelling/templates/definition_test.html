@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Definition Test</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="card">
+      <h1>📝 Definition Test</h1>
+      <div id="app">
+        <div id="card">
+          <div class="progress-container">
+            <div id="progress-bar"></div>
+          </div>
+          <p id="progress"></p>
+
+          <h2 id="definition-display">Definition will appear here</h2>
+
+          <div id="choices-container">
+            <!-- Choices will be populated by JavaScript -->
+          </div>
+
+          <div class="controls">
+            <button id="next-btn" class="btn-primary" disabled>Next</button>
+          </div>
+        </div>
+
+        <div id="done" style="display:none">
+          <h2>All done 🎉</h2>
+          <button id="submit-btn" class="btn-primary">Submit answers</button>
+        </div>
+      </div>
+
+      <div id="results" style="display:none">
+        <h2>Results</h2>
+        <div id="results-area"></div>
+        <button id="retry" class="btn-secondary">Try again</button>
+        <a href="/select_test?session={{ request.args.get('session') }}" class="btn-secondary" style="margin-left: 8px;">Back to Test Selection</a>
+      </div>
+    </main>
+
+    <script>
+    const questions = {{ questions|safe }};
+    let currentQuestionIndex = 0;
+    const totalQuestions = questions.length;
+    const responses = [];
+
+    function updateProgress(i) {
+      document.getElementById('progress').innerText = `Question ${i+1} of ${totalQuestions}`;
+      const percent = ((i+1)/totalQuestions) * 100;
+      document.getElementById('progress-bar').style.width = percent + '%';
+    }
+
+    function showQuestion(i) {
+      const question = questions[i];
+      updateProgress(i);
+      
+      // Display the definition (with HTML support for italics)
+      document.getElementById('definition-display').innerHTML = question.definition;
+      
+      // Create choice buttons
+      const choicesContainer = document.getElementById('choices-container');
+      choicesContainer.innerHTML = '';
+      
+      question.choices.forEach((choice, index) => {
+        const button = document.createElement('button');
+        button.className = 'choice-btn btn-secondary';
+        button.style.display = 'block';
+        button.style.width = '100%';
+        button.style.marginBottom = '8px';
+        button.style.textAlign = 'left';
+        button.style.padding = '12px';
+        button.innerText = choice.word;
+        button.dataset.word = choice.word;
+        
+        button.addEventListener('click', function() {
+          // Remove selected class from all buttons
+          document.querySelectorAll('.choice-btn').forEach(btn => {
+            btn.classList.remove('selected');
+          });
+          
+          // Add selected class to clicked button
+          this.classList.add('selected');
+          this.style.background = '#2563eb';
+          this.style.color = 'white';
+          
+          // Enable next button
+          document.getElementById('next-btn').disabled = false;
+        });
+        
+        choicesContainer.appendChild(button);
+      });
+      
+      // Disable next button until a choice is made
+      document.getElementById('next-btn').disabled = true;
+    }
+
+    document.getElementById('next-btn').addEventListener('click', ()=>{
+      const selectedButton = document.querySelector('.choice-btn.selected');
+      if (!selectedButton) return;
+      
+      const selectedWord = selectedButton.dataset.word;
+      const currentQuestion = questions[currentQuestionIndex];
+      
+      responses.push({
+        definition: currentQuestion.definition,
+        correct_word: currentQuestion.correct_word,
+        selected_word: selectedWord
+      });
+      
+      currentQuestionIndex++;
+      
+      if (currentQuestionIndex >= totalQuestions) {
+        document.getElementById('card').style.display = 'none';
+        document.getElementById('done').style.display = 'block';
+      } else {
+        showQuestion(currentQuestionIndex);
+      }
+    });
+
+    document.getElementById('submit-btn').addEventListener('click', async ()=>{
+      const resp = await fetch('/grade_definition_test', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({responses})
+      });
+      const data = await resp.json();
+      displayResults(data);
+    });
+
+    function displayResults(data) {
+        document.getElementById('done').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        const area = document.getElementById('results-area');
+        area.innerHTML = '';
+
+        // Summary
+        const summary = document.createElement('p');
+        summary.className = 'summary';
+        summary.innerText = `Correct answers: ${data.summary.correct_count} / ${data.summary.total_items}`;
+        area.appendChild(summary);
+
+        data.results.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            
+            const isCorrect = r.correct;
+            if (!isCorrect) {
+                div.classList.add('wrong');
+            }
+
+            div.innerHTML = `
+            <h3>Definition: ${r.definition}</h3>
+            <p>Your answer: <strong>${r.selected_word}</strong> ${isCorrect ? '✅ Correct' : '❌ Incorrect'}</p>
+            <p>Correct word: <strong>${r.correct_word}</strong></p>
+            `;
+
+            area.appendChild(div);
+        });
+
+        document.getElementById('retry').addEventListener('click', () => location.reload());
+    }
+
+    showQuestion(0);
+    </script>
+  </body>
+</html>

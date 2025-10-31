@@ -52,7 +52,8 @@ def parse_word_file(path):
             word = parts[0]
             sentence = parts[1] if len(parts) > 1 and parts[1] else None
             pos = parts[2] if len(parts) > 2 and parts[2] else None
-            words.append({'word': word, 'sentence': sentence, 'pos': pos})
+            definition = parts[3] if len(parts) > 3 and parts[3] else None
+            words.append({'word': word, 'sentence': sentence, 'pos': pos, 'definition': definition})
     return words
 
 
@@ -70,6 +71,29 @@ def detect_affix(word):
             found['explanation'] = meaning
             break
     return found
+
+
+def create_definition_clue(word_data):
+    """Create a sentence with the word replaced by a definition clue in italics"""
+    if not word_data.get('sentence'):
+        return f"Select the word that means: {word_data.get('definition', 'the correct word')}"
+    
+    sentence = word_data['sentence']
+    word = word_data['word']
+    
+    # Replace the word with an italicized definition clue
+    if word_data.get('definition'):
+        clue = f"<i>{word_data['definition']}</i>"
+    else:
+        # If no definition provided, use a generic clue
+        if word_data.get('pos'):
+            clue = f"<i>a {word_data['pos']}</i>"
+        else:
+            clue = f"<i>the missing word</i>"
+    
+    # Simple replacement - replace the first occurrence of the word
+    definition_sentence = sentence.replace(word, clue, 1)
+    return definition_sentence
 
 
 @app.route('/')
@@ -97,10 +121,20 @@ def upload():
         session_path = os.path.join(app.config['UPLOAD_FOLDER'], session_file)
         with open(session_path, 'w', encoding='utf-8') as sf:
             json.dump(words, sf, ensure_ascii=False)
-        return redirect(url_for('test', session=session_file))
+        
+        return redirect(url_for('select_test', session=session_file))
     else:
         flash('Invalid file type. Upload a .txt file.')
         return redirect(url_for('index'))
+
+
+@app.route('/select_test')
+def select_test():
+    session = request.args.get('session')
+    if not session:
+        flash('No session')
+        return redirect(url_for('index'))
+    return render_template('select_test.html', session=session)
 
 
 @app.route('/test')
@@ -117,6 +151,47 @@ def test():
         words = json.load(f)
     random.shuffle(words)
     return render_template('test.html', words=json.dumps(words))
+
+
+@app.route('/definition_test')
+def definition_test():
+    session = request.args.get('session')
+    if not session:
+        flash('No session')
+        return redirect(url_for('index'))
+    path = os.path.join(app.config['UPLOAD_FOLDER'], session)
+    if not os.path.exists(path):
+        flash('Session not found')
+        return redirect(url_for('index'))
+    with open(path, 'r', encoding='utf-8') as f:
+        words = json.load(f)
+    
+    # Create definition test questions
+    questions = []
+    for word_data in words:
+        # Create the definition clue sentence
+        definition_clue = create_definition_clue(word_data)
+        
+        # Select 3 random wrong answers + the correct one
+        other_words = [w for w in words if w['word'] != word_data['word']]
+        wrong_choices = random.sample(other_words, min(3, len(other_words)))
+        
+        choices = [{'word': word_data['word'], 'correct': True}] + \
+                  [{'word': w['word'], 'correct': False} for w in wrong_choices]
+        
+        # Shuffle the choices
+        random.shuffle(choices)
+        
+        questions.append({
+            'definition': definition_clue,
+            'correct_word': word_data['word'],
+            'choices': choices
+        })
+    
+    # Shuffle the questions
+    random.shuffle(questions)
+    
+    return render_template('definition_test.html', questions=json.dumps(questions))
 
 
 @app.route('/grade', methods=['POST'])
@@ -177,6 +252,33 @@ def grade():
             'sentence': r.get('sentence')
         })
     summary = {'total_items': len(results), 'fully_correct': correct_count}
+    return {'results': results, 'summary': summary}
+
+
+@app.route('/grade_definition_test', methods=['POST'])
+def grade_definition_test():
+    payload = request.get_json()
+    responses = payload.get('responses', [])
+    results = []
+    correct_count = 0
+    
+    for r in responses:
+        definition = r.get('definition', '')
+        correct_word = r.get('correct_word', '')
+        selected_word = r.get('selected_word', '')
+        
+        is_correct = selected_word.lower() == correct_word.lower()
+        if is_correct:
+            correct_count += 1
+            
+        results.append({
+            'definition': definition,
+            'correct_word': correct_word,
+            'selected_word': selected_word,
+            'correct': is_correct
+        })
+    
+    summary = {'total_items': len(results), 'correct_count': correct_count}
     return {'results': results, 'summary': summary}
 
 
