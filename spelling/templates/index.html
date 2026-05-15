@@ -7,20 +7,32 @@
   </head>
   <body>
     <main class="card">
-      <h1>📘 Spelling Test — Upload Word List</h1>
-      <p>Upload a <code>.txt</code> file with one word per line. Optionally include a sentence and/or part-of-speech using pipe separators:</p>
-      <pre>word|sentence|part_of_speech</pre>
+      <h1>🎨 Spelling Superstar! 🌟</h1>
+      <p style="text-align:center;font-size:1.2rem;color:#7c3aed;font-weight:600;">
+        Welcome, young word explorer! Let's get started! 🚀
+      </p>
+
+      <p>📂 Upload a <code>.txt</code> file with one word per line.<br>
+      Format: <code>word|sentence|part_of_speech|replacement_definition</code></p>
+
+      <p><strong>💡 Tip:</strong> The replacement definition should be a phrase that can replace the word in the sentence.</p>
+      <p><strong>✨ Example:</strong> For "superfluous", use "more than necessary" so the sentence becomes:<br>
+      <em>"Due to her nervousness, Monica found herself providing <i>more than necessary</i> information during her job interview."</em></p>
+
       <form action="/upload" method="post" enctype="multipart/form-data">
+        <label>📎 Choose your word list file:</label>
         <input type="file" name="wordfile" accept=".txt" required>
-        <button type="submit" class="btn-primary">Upload & Start Test</button>
+        <div class="controls" style="justify-content:center;margin-top:18px;">
+          <button type="submit" class="btn-primary">🚀 Start the Adventure!</button>
+        </div>
       </form>
 
       <section class="examples">
-        <h3>Example `sample_words.txt`</h3>
+        <h3>📝 Example <code>sample_words.txt</code></h3>
         <pre>
-apple|The apple fell from the tree.|noun
-replay|Please replay the song.|verb
-happy|She felt happy about the news.|adjective
+superfluous|Due to her nervousness, Monica found herself providing superfluous information during her job interview.|adjective|more than necessary
+deserve|You deserve a reward for your hard work.|verb|are worthy of
+service|The company provides excellent customer service.|noun|help and assistance
         </pre>
       </section>
     </main>

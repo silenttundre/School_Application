@@ -74,24 +74,21 @@ def detect_affix(word):
 
 
 def create_definition_clue(word_data):
-    """Create a sentence with the word replaced by a definition clue in italics"""
+    """Create a sentence with the word replaced by its definition phrase in italics"""
     if not word_data.get('sentence'):
         return f"Select the word that means: {word_data.get('definition', 'the correct word')}"
     
     sentence = word_data['sentence']
     word = word_data['word']
     
-    # Replace the word with an italicized definition clue
+    # Use the definition phrase directly
     if word_data.get('definition'):
         clue = f"<i>{word_data['definition']}</i>"
     else:
-        # If no definition provided, use a generic clue
-        if word_data.get('pos'):
-            clue = f"<i>a {word_data['pos']}</i>"
-        else:
-            clue = f"<i>the missing word</i>"
+        # If no definition provided, create a generic clue
+        clue = f"<i>the missing word</i>"
     
-    # Simple replacement - replace the first occurrence of the word
+    # Replace the word with the definition clue
     definition_sentence = sentence.replace(word, clue, 1)
     return definition_sentence
 
@@ -265,12 +262,11 @@ def grade_definition_test():
     for r in responses:
         definition = r.get('definition', '')
         correct_word = r.get('correct_word', '')
-        selected_word = r.get('selected_word', '')
-        
+        selected_word = r.get('selected_word', '') or ''
         is_correct = selected_word.lower() == correct_word.lower()
         if is_correct:
             correct_count += 1
-            
+
         results.append({
             'definition': definition,
             'correct_word': correct_word,

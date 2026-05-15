@@ -7,7 +7,7 @@
   </head>
   <body>
     <main class="card">
-      <h1>📝 Spelling Test</h1>
+      <h1>✏️ Super Speller Adventure 🚀</h1>
       <div id="app">
         <div id="card">
           <div class="progress-container">
@@ -15,40 +15,44 @@
           </div>
           <p id="progress"></p>
 
-          <h2 id="word-display">Listen and type the spelling</h2>
+          <h2 id="word-display">🎧 Listen and type the spelling!</h2>
 
-          <div class="controls">
-            <button id="say-word" class="btn-secondary">🔊 Say word</button>
-            <button id="say-sentence" class="btn-secondary">🔊 Say sentence</button>
+          <div class="controls" style="justify-content:center;">
+            <button id="say-word" class="btn-secondary">🔊 Say Word</button>
+            <button id="say-sentence" class="btn-secondary">📖 Say Sentence</button>
           </div>
 
-          <label>Type the spelling:</label>
-          <input id="spelling-input" autocomplete="off">
+          <label>✍️ Type the spelling:</label>
+          <input id="spelling-input" autocomplete="off" placeholder="Type your spelling here...">
 
-          <label>What part of speech is this word in the sentence?</label>
+          <label>🏷️ What part of speech is this word?</label>
           <input id="pos-input" placeholder="noun / verb / adjective...">
 
           <div id="affix-area" style="display:none">
-            <label>Affix question</label>
+            <label>🧩 Affix Challenge!</label>
             <p id="affix-prompt"></p>
-            <input id="affix-input" placeholder="Explain the prefix/suffix meaning">
+            <input id="affix-input" placeholder="Explain what the prefix/suffix means">
           </div>
 
-          <div class="controls">
-            <button id="next-btn" class="btn-primary">Next</button>
+          <div class="controls" style="justify-content:center;">
+            <button id="next-btn" class="btn-primary">Next ➡️</button>
           </div>
         </div>
 
         <div id="done" style="display:none">
-          <h2>All done 🎉</h2>
-          <button id="submit-btn" class="btn-primary">Submit answers</button>
+          <h2>🎉 You did it! 🎉</h2>
+          <p style="font-size:1.3rem;">Time to see your awesome score!</p>
+          <button id="submit-btn" class="btn-primary">🏆 Show My Score!</button>
         </div>
       </div>
 
       <div id="results" style="display:none">
-        <h2>Results</h2>
+        <h2>🌟 Your Results 🌟</h2>
         <div id="results-area"></div>
-        <button id="retry" class="btn-secondary">Try again</button>
+        <div class="controls" style="justify-content:center;margin-top:20px;">
+          <button id="retry" class="btn-secondary">🔄 Try Again</button>
+          <a href="/select_test?session={{ request.args.get('session') }}" class="btn-secondary" style="text-decoration:none;display:inline-block;">🏠 Back to Tests</a>
+        </div>
       </div>
     </main>
 
@@ -105,8 +109,23 @@
       });
     }
 
+    function fireConfetti() {
+      const colors = ['#f472b6', '#fbbf24', '#a78bfa', '#60a5fa', '#34d399', '#f97316'];
+      for (let i = 0; i < 50; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti';
+        piece.style.left = Math.random() * 100 + 'vw';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = (Math.random() * 0.5) + 's';
+        piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+        if (Math.random() > 0.5) piece.style.borderRadius = '50%';
+        document.body.appendChild(piece);
+        setTimeout(() => piece.remove(), 4000);
+      }
+    }
+
     function updateProgress(i) {
-      document.getElementById('progress').innerText = `Word ${i+1} of ${total}`;
+      document.getElementById('progress').innerText = `Word ${i+1} of ${total} 🎈`;
       const percent = ((i+1)/total) * 100;
       document.getElementById('progress-bar').style.width = percent + '%';
     }
@@ -131,18 +150,9 @@
 
     document.getElementById('say-word').addEventListener('click', ()=>{
         const w = words[order[idx]];
-        // First: say the word
         speak(w.word);
-
-        // After 5 seconds, say the sentence
-        setTimeout(() => {
-            speak(w.sentence);
-        }, 5000);
-
-        // After another 5 seconds, say the word again
-        setTimeout(() => {
-            speak(w.word);
-        }, 10000);
+        setTimeout(() => { speak(w.sentence); }, 5000);
+        setTimeout(() => { speak(w.word); }, 10000);
     });
 
     document.getElementById('say-sentence').addEventListener('click', ()=>{
@@ -188,47 +198,55 @@
         const area = document.getElementById('results-area');
         area.innerHTML = '';
 
-        // Summary
+        const score = data.summary.fully_correct;
+        const totalItems = data.summary.total_items;
+        const percent = Math.round((score / totalItems) * 100);
+
+        let emoji = '🌟';
+        let message = 'Great work!';
+        if (percent === 100) { emoji = '🏆'; message = 'PERFECT SCORE! You are a spelling champion!'; }
+        else if (percent >= 80) { emoji = '⭐'; message = 'Awesome! You are a super speller!'; }
+        else if (percent >= 60) { emoji = '👍'; message = 'Good job! Keep practicing!'; }
+        else { emoji = '💪'; message = 'Nice try! Practice makes perfect!'; }
+
         const summary = document.createElement('p');
         summary.className = 'summary';
-        summary.innerText = `Fully correct items: ${data.summary.fully_correct} / ${data.summary.total_items}`;
+        summary.innerHTML = `${emoji} ${message}<br>You nailed ${score} out of ${totalItems} words!`;
         area.appendChild(summary);
+
+        if (percent >= 80) fireConfetti();
 
         data.results.forEach(r => {
             const div = document.createElement('div');
             div.className = 'result-item';
 
-            // Spelling feedback
-            const spellingFeedback = r.spelling_ok 
-            ? '✅ Correct' 
-            : `❌ Incorrect (Correct: ${r.correct_spelling})`;
+            const spellingFeedback = r.spelling_ok
+              ? '🎉 Correct!'
+              : `❌ Oops! Correct: <strong style="color:#16a34a;">${r.correct_spelling}</strong>`;
 
-            // POS feedback
-            let posFeedback = '(not auto-graded)';
+            let posFeedback = '(not graded)';
             if (r.pos_ok === true) posFeedback = '✅ Correct';
-            else if (r.pos_ok === false) posFeedback = `❌ Incorrect (Expected: ${r.pos_expected})`;
+            else if (r.pos_ok === false) posFeedback = `❌ (Expected: ${r.pos_expected})`;
 
-            // Affix feedback
             let affixFeedback = '';
             if (r.affix_ok === true) {
-                affixFeedback = `✅ Correct (matched prefix/suffix or meaning: ${r.affix_explanation || ''})`;
+                affixFeedback = `✅ Nice! (${r.affix_explanation || ''})`;
             } else if (r.affix_ok === false) {
-                affixFeedback = `❌ Incorrect (Hint: ${r.affix_explanation || ''})`;
+                affixFeedback = `❌ (Hint: ${r.affix_explanation || ''})`;
             }
+
+            const allOk = r.spelling_ok && r.pos_ok !== false && r.affix_ok !== false;
 
             div.innerHTML = `
-            <h3>${r.word}</h3>
-            <p>Sentence: ${r.sentence || ''}</p>
-            <p>Your spelling: <strong>${r.student_spelling}</strong> ${spellingFeedback}</p>
-            <p>Your POS: ${r.pos_student || '(none)'} ${posFeedback}</p>
-            <p>Affix answer: ${r.affix_answer || '(none)'} ${affixFeedback}</p>
-            <p>Points: ${r.points} / ${r.max_points}</p>
+              <h3>${allOk ? '✅' : '❌'} ${r.word}</h3>
+              <p><em>${r.sentence || ''}</em></p>
+              <p>Your spelling: <strong>${r.student_spelling || '(none)'}</strong> ${spellingFeedback}</p>
+              <p>Your part of speech: <strong>${r.pos_student || '(none)'}</strong> ${posFeedback}</p>
+              ${affixFeedback ? `<p>Affix answer: <strong>${r.affix_answer || '(none)'}</strong> ${affixFeedback}</p>` : ''}
+              <p>⭐ Points: <strong>${r.points} / ${r.max_points}</strong></p>
             `;
 
-            if (!r.spelling_ok || (r.pos_ok === false) || (r.affix_ok === false)) {
-                div.classList.add('wrong');
-            }
-
+            if (!allOk) div.classList.add('wrong');
             area.appendChild(div);
         });
 

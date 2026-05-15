@@ -7,7 +7,7 @@
   </head>
   <body>
     <main class="card">
-      <h1>📝 Definition Test</h1>
+      <h1>🌈 Word Detective Quest 🔍</h1>
       <div id="app">
         <div id="card">
           <div class="progress-container">
@@ -16,27 +16,31 @@
           <p id="progress"></p>
 
           <h2 id="definition-display">Definition will appear here</h2>
+          <p style="text-align:center;color:#7c3aed;font-weight:600;">Pick the word that fits! 🎯</p>
 
           <div id="choices-container">
             <!-- Choices will be populated by JavaScript -->
           </div>
 
-          <div class="controls">
-            <button id="next-btn" class="btn-primary" disabled>Next</button>
+          <div class="controls" style="justify-content:center;">
+            <button id="next-btn" class="btn-primary" disabled>Next ➡️</button>
           </div>
         </div>
 
         <div id="done" style="display:none">
-          <h2>All done 🎉</h2>
-          <button id="submit-btn" class="btn-primary">Submit answers</button>
+          <h2>🎉 All done! Amazing job! 🎉</h2>
+          <p style="font-size:1.3rem;">Ready to see how you did?</p>
+          <button id="submit-btn" class="btn-primary">🏆 Show My Score!</button>
         </div>
       </div>
 
       <div id="results" style="display:none">
-        <h2>Results</h2>
+        <h2>🌟 Your Results 🌟</h2>
         <div id="results-area"></div>
-        <button id="retry" class="btn-secondary">Try again</button>
-        <a href="/select_test?session={{ request.args.get('session') }}" class="btn-secondary" style="margin-left: 8px;">Back to Test Selection</a>
+        <div class="controls" style="justify-content:center;margin-top:20px;">
+          <button id="retry" class="btn-secondary">🔄 Try Again</button>
+          <a href="/select_test?session={{ request.args.get('session') }}" class="btn-secondary" style="text-decoration:none;display:inline-block;">🏠 Back to Tests</a>
+        </div>
       </div>
     </main>
 
@@ -46,8 +50,23 @@
     const totalQuestions = questions.length;
     const responses = [];
 
+    function fireConfetti() {
+      const colors = ['#f472b6', '#fbbf24', '#a78bfa', '#60a5fa', '#34d399', '#f97316'];
+      for (let i = 0; i < 50; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti';
+        piece.style.left = Math.random() * 100 + 'vw';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = (Math.random() * 0.5) + 's';
+        piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+        if (Math.random() > 0.5) piece.style.borderRadius = '50%';
+        document.body.appendChild(piece);
+        setTimeout(() => piece.remove(), 4000);
+      }
+    }
+
     function updateProgress(i) {
-      document.getElementById('progress').innerText = `Question ${i+1} of ${totalQuestions}`;
+      document.getElementById('progress').innerText = `Question ${i+1} of ${totalQuestions} 🎈`;
       const percent = ((i+1)/totalQuestions) * 100;
       document.getElementById('progress-bar').style.width = percent + '%';
     }
@@ -55,62 +74,45 @@
     function showQuestion(i) {
       const question = questions[i];
       updateProgress(i);
-      
-      // Display the definition (with HTML support for italics)
+
       document.getElementById('definition-display').innerHTML = question.definition;
-      
-      // Create choice buttons
+
       const choicesContainer = document.getElementById('choices-container');
       choicesContainer.innerHTML = '';
-      
-      question.choices.forEach((choice, index) => {
+
+      question.choices.forEach((choice) => {
         const button = document.createElement('button');
-        button.className = 'choice-btn btn-secondary';
-        button.style.display = 'block';
-        button.style.width = '100%';
-        button.style.marginBottom = '8px';
-        button.style.textAlign = 'left';
-        button.style.padding = '12px';
+        button.className = 'choice-btn';
+        button.type = 'button';
         button.innerText = choice.word;
         button.dataset.word = choice.word;
-        
+
         button.addEventListener('click', function() {
-          // Remove selected class from all buttons
-          document.querySelectorAll('.choice-btn').forEach(btn => {
-            btn.classList.remove('selected');
-          });
-          
-          // Add selected class to clicked button
+          // Single-select: clear all others first, then mark this one
+          document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
           this.classList.add('selected');
-          this.style.background = '#2563eb';
-          this.style.color = 'white';
-          
-          // Enable next button
           document.getElementById('next-btn').disabled = false;
         });
-        
+
         choicesContainer.appendChild(button);
       });
-      
-      // Disable next button until a choice is made
+
       document.getElementById('next-btn').disabled = true;
     }
 
     document.getElementById('next-btn').addEventListener('click', ()=>{
-      const selectedButton = document.querySelector('.choice-btn.selected');
-      if (!selectedButton) return;
-      
-      const selectedWord = selectedButton.dataset.word;
+      const selected = document.querySelector('.choice-btn.selected');
+      if (!selected) return;
+
       const currentQuestion = questions[currentQuestionIndex];
-      
       responses.push({
         definition: currentQuestion.definition,
         correct_word: currentQuestion.correct_word,
-        selected_word: selectedWord
+        selected_word: selected.dataset.word
       });
-      
+
       currentQuestionIndex++;
-      
+
       if (currentQuestionIndex >= totalQuestions) {
         document.getElementById('card').style.display = 'none';
         document.getElementById('done').style.display = 'block';
@@ -135,27 +137,36 @@
         const area = document.getElementById('results-area');
         area.innerHTML = '';
 
-        // Summary
+        const score = data.summary.correct_count;
+        const total = data.summary.total_items;
+        const percent = Math.round((score / total) * 100);
+
+        let emoji = '🌟';
+        let message = 'Great work!';
+        if (percent === 100) { emoji = '🏆'; message = 'PERFECT SCORE! You are a word wizard!'; }
+        else if (percent >= 80) { emoji = '⭐'; message = 'Awesome! You are a super speller!'; }
+        else if (percent >= 60) { emoji = '👍'; message = 'Good job! Keep practicing!'; }
+        else { emoji = '💪'; message = 'Nice try! Practice makes perfect!'; }
+
         const summary = document.createElement('p');
         summary.className = 'summary';
-        summary.innerText = `Correct answers: ${data.summary.correct_count} / ${data.summary.total_items}`;
+        summary.innerHTML = `${emoji} ${message}<br>You got ${score} out of ${total} right!`;
         area.appendChild(summary);
+
+        if (percent >= 80) fireConfetti();
 
         data.results.forEach(r => {
             const div = document.createElement('div');
             div.className = 'result-item';
-            
             const isCorrect = r.correct;
-            if (!isCorrect) {
-                div.classList.add('wrong');
-            }
+            if (!isCorrect) div.classList.add('wrong');
 
             div.innerHTML = `
-            <h3>Definition: ${r.definition}</h3>
-            <p>Your answer: <strong>${r.selected_word}</strong> ${isCorrect ? '✅ Correct' : '❌ Incorrect'}</p>
-            <p>Correct word: <strong>${r.correct_word}</strong></p>
+              <h3>${isCorrect ? '✅' : '❌'} ${r.correct_word}</h3>
+              <p><strong>Clue:</strong> ${r.definition}</p>
+              <p>Your pick: <strong>${r.selected_word || '(none)'}</strong> ${isCorrect ? '🎉 Correct!' : '— oops!'}</p>
+              ${!isCorrect ? `<p>The right word was: <strong style="color:#16a34a;">${r.correct_word}</strong> ✨</p>` : ''}
             `;
-
             area.appendChild(div);
         });
 
